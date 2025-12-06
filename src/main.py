@@ -2,6 +2,7 @@
 import time
 from blink import blink_led
 import config
+import os
 
 print("ESP32 MicroPython project starting...")
 
@@ -40,6 +41,52 @@ try:
             try:
                 with open('sensor.log', 'a') as lf:
                     lf.write(line + "\n")
+
+                # Rotate logs if enabled and file exceeds configured size
+                max_bytes = getattr(config, 'LOG_MAX_BYTES', None)
+                backups = getattr(config, 'LOG_BACKUPS', 3)
+                if max_bytes is not None and max_bytes > 0:
+                    try:
+                        # obtain file size in a cross-platform way
+                        st = os.stat('sensor.log')
+                        # stat may return an object with st_size or a tuple (index 6)
+                        size = getattr(st, 'st_size', None)
+                        if size is None:
+                            try:
+                                size = st[6]
+                            except Exception:
+                                size = None
+
+                        if size is not None and size > max_bytes:
+                            # rotate: sensor.log.(N-1) -> sensor.log.N, then sensor.log -> sensor.log.1
+                            try:
+                                # remove oldest
+                                oldest = f"sensor.log.{backups}"
+                                try:
+                                    os.remove(oldest)
+                                except Exception:
+                                    pass
+
+                                # shift backups
+                                for i in range(backups - 1, 0, -1):
+                                    src = f"sensor.log.{i}"
+                                    dst = f"sensor.log.{i+1}"
+                                    try:
+                                        os.rename(src, dst)
+                                    except Exception:
+                                        # missing file is fine
+                                        pass
+
+                                # finally rotate current log
+                                try:
+                                    os.rename('sensor.log', 'sensor.log.1')
+                                except Exception as e:
+                                    print('Failed to rotate sensor.log:', e)
+                            except Exception as e:
+                                print('Log rotation error:', e)
+                    except Exception:
+                        # if stat fails, skip rotation
+                        pass
             except Exception as e:
                 print("Failed to write sensor log:", e)
         else:
