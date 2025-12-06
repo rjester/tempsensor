@@ -30,7 +30,6 @@ ENV/
 env.bak/
 
 # Editor directories and files
-.vscode/
 .idea/
 *.sublime-workspace
 *.sublime-project
