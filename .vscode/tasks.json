@@ -1,0 +1,40 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Deploy to ESP32",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/deploy.sh",
+            "problemMatcher": [],
+            "options": {
+                "env": {
+                    "DEVICE": "auto"
+                }
+            }
+        },
+        {
+            "label": "Open ESP32 REPL",
+            "type": "shell",
+            "command": "mpremote connect auto repl",
+            "problemMatcher": []
+        },
+        {
+            "label": "Reset ESP32",
+            "type": "shell",
+            "command": "mpremote connect auto reset",
+            "problemMatcher": []
+        }
+        ,
+        {
+            "label": "Deploy to ESP32 (dry-run)",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/deploy.sh --dry-run",
+            "problemMatcher": [],
+            "options": {
+                "env": {
+                    "DEVICE": "auto"
+                }
+            }
+        }
+    ]
+}
