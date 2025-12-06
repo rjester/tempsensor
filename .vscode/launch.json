@@ -2,12 +2,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Deploy + REPL (ESP32)",
+            "name": "Python: Run main.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/deploy.sh",
+            "program": "${workspaceFolder}/src/main.py",
             "console": "integratedTerminal",
-            "args": [],
+            "justMyCode": true
+        },
+        {
+            "name": "Run deploy script (terminal)",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "/bin/bash",
+            "runtimeArgs": ["-lc", "${workspaceFolder}/scripts/deploy.sh --dry-run"],
+            "console": "integratedTerminal",
             "env": {
                 "DEVICE": "auto"
             }

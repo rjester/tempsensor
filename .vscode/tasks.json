@@ -36,5 +36,26 @@
                 }
             }
         }
+        ,
+        {
+            "label": "Run main.py (local)",
+            "type": "shell",
+            "command": "python3 ${workspaceFolder}/src/main.py",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run main.py (local, 5s)",
+            "type": "shell",
+            "command": "timeout 5 python3 ${workspaceFolder}/src/main.py",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
     ]
 }
