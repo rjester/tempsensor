@@ -50,6 +50,14 @@
         }
         ,
         {
+            "label": "Pull sensor log",
+            "type": "shell",
+            "command": "mkdir -p ${workspaceFolder}/logs && mpremote connect auto fs cp :sensor.log ${workspaceFolder}/logs/sensor.log",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "shared" }
+        }
+        ,
+        {
             "label": "Run main.py (local)",
             "type": "shell",
             "command": "python3 ${workspaceFolder}/src/main.py",

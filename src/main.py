@@ -25,7 +25,23 @@ try:
     while True:
         if sensor is not None:
             t, h = sensor.read()
+            line = None
+            try:
+                # Try to get a friendly timestamp
+                tm = time.localtime()
+                ts = f"{tm[0]:04d}-{tm[1]:02d}-{tm[2]:02d}T{tm[3]:02d}:{tm[4]:02d}:{tm[5]:02d}"
+            except Exception:
+                ts = str(time.time())
+
+            line = f"{ts} T:{t}C H:{h}%"
             print(f"Temperature: {t} °C, Humidity: {h} %")
+
+            # Append to log file on device
+            try:
+                with open('sensor.log', 'a') as lf:
+                    lf.write(line + "\n")
+            except Exception as e:
+                print("Failed to write sensor log:", e)
         else:
             # No sensor configured; just sleep
             pass
