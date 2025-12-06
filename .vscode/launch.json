@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Deploy + REPL (ESP32)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/deploy.sh",
+            "console": "integratedTerminal",
+            "args": [],
+            "env": {
+                "DEVICE": "auto"
+            }
+        }
+    ]
+}
