@@ -38,6 +38,18 @@
         }
         ,
         {
+            "label": "Deploy and Open REPL",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/deploy.sh && mpremote connect auto repl",
+            "problemMatcher": [],
+            "options": {
+                "env": {
+                    "DEVICE": "auto"
+                }
+            }
+        }
+        ,
+        {
             "label": "Run main.py (local)",
             "type": "shell",
             "command": "python3 ${workspaceFolder}/src/main.py",
