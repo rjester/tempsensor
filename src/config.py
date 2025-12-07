@@ -12,6 +12,12 @@ LED_PIN = 2   # Most ESP32 boards use GPIO2 for onboard LED
 # Example: DHT_PIN = 4
 DHT_PIN = 14
 
+# NTP/time settings
+# `NTP_SERVER` can be overridden in `src/local_config.py` or `.env` during deploy
+NTP_SERVER = "pool.ntp.org"
+# Timezone offset in seconds (e.g. -5*3600 for EST)
+TZ_OFFSET = 0
+
 # Logging rotation settings (bytes and number of backups)
 # Logging rotation settings were removed — file logging is disabled.
 # (Previously: LOG_MAX_BYTES, LOG_BACKUPS)
