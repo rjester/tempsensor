@@ -33,6 +33,47 @@ fi
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC_DIR="$PROJECT_ROOT/src"
 
+# If a .env file exists at project root (or WIFI_SSID/WIFI_PASSWORD are set
+# in the environment), generate a temporary `src/local_config.py` so
+# credentials are not stored in the main `src/config.py` file. The temp file
+# will be removed after deployment.
+ENV_FILE="$PROJECT_ROOT/.env"
+TMP_LOCAL_CONFIG="$SRC_DIR/local_config.py"
+CLEAN_LOCAL_CONFIG=0
+
+escape_single_quote() {
+    # Escape single quotes for safe single-quoted here-doc insertion.
+    printf "%s" "$1" | sed "s/'/'\\''/g"
+}
+
+if [ -f "$ENV_FILE" ]; then
+    echo "Found .env — generating temporary src/local_config.py"
+    SSID_RAW=$(grep -E '^WIFI_SSID=' "$ENV_FILE" || true)
+    PASS_RAW=$(grep -E '^WIFI_PASSWORD=' "$ENV_FILE" || true)
+    SSID=${SSID_RAW#WIFI_SSID=}
+    PASS=${PASS_RAW#WIFI_PASSWORD=}
+    # strip surrounding quotes if present
+    # Strip surrounding single or double quotes if present
+    SSID=$(printf "%s" "$SSID" | sed -E "s/^\"(.*)\"$/\\1/; s/^'(.*)'$/\\1/")
+    PASS=$(printf "%s" "$PASS" | sed -E "s/^\"(.*)\"$/\\1/; s/^'(.*)'$/\\1/")
+    SSID_ESC=$(escape_single_quote "$SSID")
+    PASS_ESC=$(escape_single_quote "$PASS")
+    cat > "$TMP_LOCAL_CONFIG" <<EOF
+WIFI_SSID = '$SSID_ESC'
+WIFI_PASSWORD = '$PASS_ESC'
+EOF
+    CLEAN_LOCAL_CONFIG=1
+elif [ -n "${WIFI_SSID:-}" ] && [ -n "${WIFI_PASSWORD:-}" ]; then
+    echo "Using WIFI_SSID/WIFI_PASSWORD from environment to generate temporary src/local_config.py"
+    SSID_ESC=$(escape_single_quote "$WIFI_SSID")
+    PASS_ESC=$(escape_single_quote "$WIFI_PASSWORD")
+    cat > "$TMP_LOCAL_CONFIG" <<EOF
+WIFI_SSID = '$SSID_ESC'
+WIFI_PASSWORD = '$PASS_ESC'
+EOF
+    CLEAN_LOCAL_CONFIG=1
+fi
+
 if [ "$DRY_RUN" -eq 1 ]; then
     echo "🔍 Dry-run mode: skipping device check and remote actions"
 else
@@ -83,6 +124,21 @@ done < <(find "$SRC_DIR" -type d)
 printf "\n📤 Uploading changed files...\n"
 CHANGED_COUNT=0
 
+# Upload `local_config.py` first if it exists (generated from .env or env vars)
+if [ -f "$SRC_DIR/local_config.py" ]; then
+    REL="local_config.py"
+    echo "cp \"$SRC_DIR/local_config.py\" \"$REL\""
+    if [ "$DRY_RUN" -eq 1 ]; then
+        echo "    DRY RUN: $PORT_CMD fs cp \"$SRC_DIR/local_config.py\" :$REL"
+    else
+        if $PORT_CMD fs cp "$SRC_DIR/local_config.py" ":$REL"; then
+            CHANGED_COUNT=$((CHANGED_COUNT + 1))
+        else
+            echo "⚠️ Failed to upload $REL (continuing)"
+        fi
+    fi
+fi
+
 while IFS= read -r FILE; do
     REL="${FILE#$SRC_DIR}"
     REL="${REL#/}"
@@ -99,7 +155,7 @@ while IFS= read -r FILE; do
             echo "⚠️ Failed to upload $REL (continuing)"
         fi
     fi
-done < <(find "$SRC_DIR" -type f)
+done < <(find "$SRC_DIR" -type f ! -name 'local_config.py')
 
 
 echo ""
@@ -118,6 +174,16 @@ if [ "$DRY_RUN" -eq 1 ]; then
 else
     # Attempt reset but don't let it abort the deployment on failure
     PORT_CMD_reset || true
+fi
+
+# Clean up any generated local_config.py
+if [ "$CLEAN_LOCAL_CONFIG" -eq 1 ]; then
+    if [ "$DRY_RUN" -eq 1 ]; then
+        echo "    DRY RUN: would remove $TMP_LOCAL_CONFIG"
+    else
+        rm -f "$TMP_LOCAL_CONFIG" || true
+        echo "🧹 Removed temporary local config: $TMP_LOCAL_CONFIG"
+    fi
 fi
 
 echo ""
