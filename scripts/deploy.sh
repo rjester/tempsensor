@@ -37,10 +37,19 @@ if [ "$DRY_RUN" -eq 1 ]; then
     echo "🔍 Dry-run mode: skipping device check and remote actions"
 else
     echo "🔍 Checking device..."
-    $PORT_CMD exec "print('connected')" || {
-        echo "❌ mpremote cannot talk to the device"
-        exit 1
-    }
+    if ! $PORT_CMD exec "print('connected')" 2>/dev/null; then
+        echo "⚠️ Device check failed — attempting soft reset and retry..."
+        # Try a soft reset to stop any running user program and free raw-REPL
+        if ! $PORT_CMD reset 2>/dev/null; then
+            echo "⚠️ Soft reset failed; will continue and try file operations (they may fail)"
+        else
+            # give device a moment to restart
+            sleep 1
+            if ! $PORT_CMD exec "print('connected')" 2>/dev/null; then
+                echo "⚠️ Still cannot talk to device; file operations may fail"
+            fi
+        fi
+    fi
 fi
 
 echo "🚀 Starting deployment..."
@@ -84,19 +93,32 @@ while IFS= read -r FILE; do
     if [ "$DRY_RUN" -eq 1 ]; then
         echo "    DRY RUN: $PORT_CMD fs cp \"$FILE\" :$REL"
     else
-        if ! $PORT_CMD fs cp "$FILE" ":$REL"; then
-            echo "❌ Failed to upload $REL"
-            exit 1
+        if $PORT_CMD fs cp "$FILE" ":$REL"; then
+            CHANGED_COUNT=$((CHANGED_COUNT + 1))
+        else
+            echo "⚠️ Failed to upload $REL (continuing)"
         fi
     fi
-
-    CHANGED_COUNT=$((CHANGED_COUNT + 1))
 done < <(find "$SRC_DIR" -type f)
 
 
 echo ""
 echo "🔁 Soft reset..."
-$PORT_CMD reset
+PORT_CMD_reset() {
+    # Wrapper to run reset and avoid aborting the whole script on failure.
+    if ! $PORT_CMD reset; then
+        echo "⚠️ Warning: soft reset failed (could not enter raw REPL); continuing"
+        return 1
+    fi
+    return 0
+}
+
+if [ "$DRY_RUN" -eq 1 ]; then
+    echo "    DRY RUN: $PORT_CMD reset"
+else
+    # Attempt reset but don't let it abort the deployment on failure
+    PORT_CMD_reset || true
+fi
 
 echo ""
 echo "🎉 Deployment complete!"

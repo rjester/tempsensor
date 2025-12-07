@@ -7,11 +7,11 @@ import os
 print("ESP32 MicroPython project starting...")
 
 # Blink the LED a few times on startup
-for i in range(10):
-    blink_led()
-    time.sleep(0.2)
+# for i in range(10):
+#     blink_led()
+#     time.sleep(0.2)
 
-print("Done blinking. Starting sensor loop...")
+# print("Done blinking. Starting sensor loop...")
 
 sensor = None
 if getattr(config, 'DHT_PIN', None) is not None:
@@ -102,6 +102,6 @@ try:
             # No sensor configured; just sleep
             pass
 
-        time.sleep(1)
+        time.sleep(10)
 except KeyboardInterrupt:
     print("Exiting main loop")

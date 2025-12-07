@@ -26,11 +26,11 @@ def connect(blocking=True):
                     break
                 time.sleep(0.5)
 
-    if wlan.isconnected():
-        try:
-            print("Connected:", wlan.ifconfig())
-        except Exception:
-            # some ports may not support ifconfig in the same way
-            print("Connected")
-    else:
-        print("Failed to connect")
+    # if wlan.isconnected():
+    #     try:
+    #         print("Connected:", wlan.ifconfig())
+    #     except Exception:
+    #         # some ports may not support ifconfig in the same way
+    #         print("Connected")
+    # else:
+    #     print("Failed to connect")
