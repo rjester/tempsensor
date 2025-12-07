@@ -41,7 +41,7 @@ try:
 
             line = f"{ts} T:{t}C/{tf}F H:{h}%"
             if tf is not None:
-                print(f"Temperature: {t} °C ({tf} °F), Humidity: {h} %")
+                print(f"{line}")
             else:
                 print(f"Temperature: {t} °C, Humidity: {h} %")
 
@@ -51,6 +51,6 @@ try:
             # No sensor configured; just sleep
             pass
 
-        time.sleep(60)
+        time.sleep(300)
 except KeyboardInterrupt:
     print("Exiting main loop")
