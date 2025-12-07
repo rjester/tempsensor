@@ -21,3 +21,13 @@ try:
                 print("WiFi error:", e)
 except Exception as e:
     print("WiFi error:", e)
+
+# Ensure main.py starts after boot; wrap in try/except so boot errors don't stop device
+try:
+    import main
+except Exception as e:
+    try:
+        print("Failed to start main:", e)
+    except Exception:
+        # printing may fail in some early boot states
+        pass
