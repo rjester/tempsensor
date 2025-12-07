@@ -34,8 +34,17 @@ try:
             except Exception:
                 ts = str(time.time())
 
-            line = f"{ts} T:{t}C H:{h}%"
-            print(f"Temperature: {t} °C, Humidity: {h} %")
+            # compute Fahrenheit for convenience
+            try:
+                tf = round((float(t) * 9.0 / 5.0) + 32.0, 2)
+            except Exception:
+                tf = None
+
+            line = f"{ts} T:{t}C/{tf}F H:{h}%"
+            if tf is not None:
+                print(f"Temperature: {t} °C ({tf} °F), Humidity: {h} %")
+            else:
+                print(f"Temperature: {t} °C, Humidity: {h} %")
 
             # Append to log file on device
             try:
