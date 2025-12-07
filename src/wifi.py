@@ -17,7 +17,7 @@ def connect(blocking=True):
         return
 
     if not wlan.isconnected():
-        print("Connecting to WiFi...")
+        # print("Connecting to WiFi...")
         wlan.connect(config.WIFI_SSID, config.WIFI_PASSWORD)
 
         if blocking:

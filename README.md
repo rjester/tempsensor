@@ -57,3 +57,23 @@ sudo usermod -aG dialout $USER
 ```
 
 If you'd like, I can add a small README snippet that includes the exact `/dev/serial/by-id/...` path from this machine.
+
+## Current Deployment Notes (important)
+
+- The project uses `mpremote` via `./scripts/deploy.sh` to copy files into the device `:/` filesystem.
+- If the device program (`main.py`) prints immediately on boot it can prevent `mpremote` from entering raw-REPL and performing filesystem operations (errors like "could not enter raw repl").
+- Workarounds:
+	- Temporary local change: `src/boot.py` can be backed up and its `import main` temporarily commented out so the device stays quiet during uploads. After uploading, restore the backup and reboot the device.
+	- Physical replug: unplug the board and plug it back in, then run `./scripts/deploy.sh` immediately — this creates a short quiet window before `main.py` starts printing.
+	- Soft-reset via DTR/RTS: toggling DTR with `pyserial` may sometimes create a quiet window, but results are less reliable than a replug.
+
+### Steps I use locally to deploy reliably
+
+1. (Optional) Back up `src/boot.py`: `cp src/boot.py src/boot.py.bak`
+2. Edit `src/boot.py` and comment out the `import main` block so `main.py` won't auto-run.
+3. Run a normal deploy: `./scripts/deploy.sh`
+4. Restore `src/boot.py` from the backup and re-deploy or reboot the device so `main.py` runs with the updated code.
+
+If you prefer to avoid editing files, a quick replug of the device and an immediate `./scripts/deploy.sh` usually succeeds.
+
+If you run into persistent problems, open the serial console (`picocom -b 115200 /dev/ttyUSB0`) and press Ctrl-C at the REPL prompt to stop a running script, then re-run the deploy.

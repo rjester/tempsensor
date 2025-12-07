@@ -1,3 +1,5 @@
 # logger.py
+# Removed: file-logging disabled. This placeholder left intentionally.
 def log(msg):
-    print("[LOG]", msg)
+    # no-op
+    return

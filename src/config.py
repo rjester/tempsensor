@@ -10,6 +10,5 @@ LED_PIN = 2   # Most ESP32 boards use GPIO2 for onboard LED
 DHT_PIN = 14
 
 # Logging rotation settings (bytes and number of backups)
-# `LOG_MAX_BYTES` controls when rotation occurs; set to None to disable rotation.
-LOG_MAX_BYTES = 16 * 1024
-LOG_BACKUPS = 3
+# Logging rotation settings were removed — file logging is disabled.
+# (Previously: LOG_MAX_BYTES, LOG_BACKUPS)
