@@ -48,4 +48,5 @@ build_mp/
 
 # Local credentials and deploy-time generated files
 .env
-src/local_config.py
+src/secrets.py
+
