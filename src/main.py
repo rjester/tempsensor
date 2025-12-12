@@ -102,7 +102,7 @@ def read_dht(sensor, retries=3):
 def main():
     # Small startup delay to allow user to interrupt (Ctrl-C) after reset
     # This provides a brief window to stop a noisy auto-running script.
-    time.sleep(2)
+    time.sleep(10)
     # print('Starting main()')
     rtc = machine.RTC()
 
