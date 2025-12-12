@@ -62,7 +62,8 @@ def sync_time(retries=3):
     ntptime.host = 'pool.ntp.org'
     for attempt in range(1, retries + 1):
         try:
-            # print('Syncing time with', ntptime.host, ' (attempt', attempt, ')')
+            # print('Syncing time with', ntptime.host)
+            # print('(attempt', attempt, ')')
             ntptime.settime()
             # print('Time synced (UTC):', time.localtime())
             return True
@@ -77,11 +78,13 @@ def timestamp(offset_seconds=0):
     t = time.localtime()
     if offset_seconds:
         try:
-            secs = time.mktime((t[0], t[1], t[2], t[3], t[4], t[5], 0, 0)) + int(offset_seconds)
+            base = (t[0], t[1], t[2], t[3], t[4], t[5], 0, 0)
+            secs = time.mktime(base) + int(offset_seconds)
             t = time.localtime(secs)
         except Exception:
             pass
-    return '{:04d}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}'.format(t[0], t[1], t[2], t[3], t[4], t[5])
+    return '{:04d}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}'.format(
+        t[0], t[1], t[2], t[3], t[4], t[5])
 
 
 def read_dht(sensor, retries=3):
@@ -105,12 +108,6 @@ def main():
     time.sleep(10)
     # print('Starting main()')
     rtc = machine.RTC()
-
-    # Wake reason
-    # if machine.reset_cause() == machine.DEEPSLEEP_RESET:
-        #print('Woke from deep sleep')
-    # else:
-        # print('Normal boot')
 
     try:
         ssid, password = safe_import_secrets()
@@ -141,7 +138,11 @@ def main():
         print(ts, 'DHT read failed after retries')
     else:
         f = temp * 9 / 5 + 32
-        print('{}  Temp: {:.1f} C / {:.1f} F  Humidity: {:.1f} %'.format(ts, temp, f, hum))
+        print(
+            '{}  Temp: {:.1f} C / {:.1f} F  Humidity: {:.1f} %'.format(
+                ts, temp, f, hum
+            )
+        )
 
         # Prepare payload
         payload = {
@@ -165,22 +166,29 @@ def main():
                 if url:
                     try:
                         try:
-                            import urequests as requests
+                            requests = __import__('urequests')
                         except Exception:
                             requests = None
                         if requests:
-                            resp = requests.post(url, data=json.dumps(payload), headers={'Content-Type':'application/json'})
-                            print('HTTP upload status:', getattr(resp, 'status_code', None))
+                            resp = requests.post(
+                                url,
+                                data=json.dumps(payload),
+                                headers={'Content-Type': 'application/json'}
+                            )
+                            status = getattr(resp, 'status_code', None)
+                            print('HTTP upload status:', status)
                             try:
                                 resp.close()
                             except Exception:
                                 pass
                         else:
-                            print('urequests unavailable; skipping HTTP upload')
+                            print('urequests unavailable;')
+                            print('skipping HTTP upload')
                     except Exception as e:
                         print('HTTP upload failed:', e)
                 else:
-                    print('HTTP_URL not set in secrets.py; skipping HTTP upload')
+                    print('HTTP_URL not set in secrets.py;')
+                    print('skipping HTTP upload')
 
             elif um == 'mqtt':
                 broker = getattr(_secrets, 'MQTT_BROKER', None)
@@ -191,7 +199,9 @@ def main():
                     pwd = getattr(_secrets, 'MQTT_PASS', None)
                     try:
                         from umqtt.simple import MQTTClient
-                        client_id = getattr(_secrets, 'MQTT_CLIENT_ID', 'esp32')
+                        client_id = getattr(
+                            _secrets, 'MQTT_CLIENT_ID', 'esp32'
+                        )
                         client = MQTTClient(client_id, broker, port, user, pwd)
                         client.connect()
                         client.publish(topic, json.dumps(payload))
@@ -200,10 +210,14 @@ def main():
                     except Exception as e:
                         print('MQTT upload failed:', e)
                 else:
-                    print('MQTT_BROKER not set in secrets.py; skipping MQTT upload')
+                    print('MQTT_BROKER not set in secrets.py;')
+                    print('skipping MQTT upload')
             elif um in ('prometheus', 'pushgateway'):
                 # Prometheus Pushgateway support
-                pg = getattr(_secrets, 'PROMETHEUS_PUSHGATEWAY', None) or getattr(_secrets, 'PUSHGATEWAY_URL', None)
+                pg = (
+                    getattr(_secrets, 'PROMETHEUS_PUSHGATEWAY', None)
+                    or getattr(_secrets, 'PUSHGATEWAY_URL', None)
+                )
                 job = getattr(_secrets, 'PROMETHEUS_JOB', 'esp32')
                 # Allow per-device instance: use PROMETHEUS_INSTANCE if set,
                 # otherwise derive from device unique id or WLAN MAC so each
@@ -224,12 +238,14 @@ def main():
                             instance = None
                 if pg:
                     try:
-                        # Build simple text-format metrics with timestamp
-                        # Pushgateway prefers metrics without explicit timestamps — omit them
+                        # Build simple text-format metrics
+                        # Pushgateway prefers no explicit timestamps
                         body = ''
                         body += 'esp32_temp_c {}\n'.format(payload['temp_c'])
                         body += 'esp32_temp_f {}\n'.format(payload['temp_f'])
-                        body += 'esp32_humidity {}\n'.format(payload['humidity'])
+                        body += 'esp32_humidity {}\n'.format(
+                            payload['humidity']
+                        )
 
                         url = pg.rstrip('/')
                         url += '/metrics/job/{}'.format(job)
@@ -238,17 +254,29 @@ def main():
 
                         try:
                             try:
-                                import urequests as requests
+                                requests = __import__('urequests')
                             except Exception:
                                 requests = None
                             if requests:
-                                resp = requests.put(url, data=body, headers={'Content-Type': 'text/plain; version=0.0.4'})
+                                hdr = {
+                                    'Content-Type': 'text/plain; version=0.0.4'
+                                }
+                                resp = requests.put(
+                                    url,
+                                    data=body,
+                                    headers=hdr
+                                )
                                 status = getattr(resp, 'status_code', None)
-                                print('Prometheus pushgateway upload status:', status)
-                                # Print response body on failure to aid debugging
+                                print('Prometheus pushgateway status:', status)
+                                # Print response body on failure
+                                # to aid debugging
                                 try:
                                     if status is None or status >= 400:
-                                        print('Response body:', getattr(resp, 'text', None) or getattr(resp, 'content', None))
+                                        body_text = (
+                                            getattr(resp, 'text', None)
+                                            or getattr(resp, 'content', None)
+                                        )
+                                        print('Response body:', body_text)
                                 except Exception:
                                     pass
                                 try:
@@ -256,13 +284,15 @@ def main():
                                 except Exception:
                                     pass
                             else:
-                                print('urequests unavailable; skipping Prometheus upload')
+                                print('urequests unavailable;')
+                                print('skipping Prometheus upload')
                         except Exception as e:
                             print('Prometheus upload failed:', e)
                     except Exception as e:
                         print('Prometheus upload preparation failed:', e)
                 else:
-                    print('PROMETHEUS_PUSHGATEWAY not set in secrets.py; skipping Prometheus upload')
+                    print('PROMETHEUS_PUSHGATEWAY not set in secrets.py;')
+                    print('skipping Prometheus upload')
             else:
                 print('Unknown UPLOAD_METHOD in secrets.py:', upload_method)
 
